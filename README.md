@@ -6,11 +6,13 @@
 * ## [Attributes](#Attributes)
 * ## [Events](#Events)
 * ## [Methods](#Methods)
+* ## [hasImage属性注意](#hasImage)
 * ## [示例代码](#demo)
 
 ## <span id="tip">使用前必读</span>
 * ### 该组件采用`模板分流方式`，所有列表样式放在 组件文件夹/components 文件夹中, 由外部传type筛选, 因此 所有的列表样式都要在 QS-Masonry-Template.vue 中注册并由type 属性控制
-* ### 为了性能考虑, 没有对每一项的图片有计算操作, 所以可能会出现在一次更新中布局列之间高度相差较大(取决于图片的高度差大小与排列的随机性), 但是一般问题不大, 因为这个差值不会无限增大, 在下一次更新中会弥补这个差距
+* ### ~~为了性能考虑, 没有对每一项的图片有计算操作, 所以可能会出现在一次更新中布局列之间高度相差较大(取决于图片的高度差大小与排列的随机性), 但是一般问题不大, 因为这个差值不会无限增大, 在下一次更新中会弥补这个差距~~
+* ### 加强对图片高度的计算，需要在模板中对image组件加上load与error事件，当所有图片加载完成后可以_emit 事件来告诉父级当前项的图片已加载完成， 详见[hasImage属性注意](#hasImage)
 
 ## <span id="mddir">示例项目目录结构<span>
 
@@ -67,6 +69,10 @@ props: {
 	itemSpace: {	//每项之间的上下间距
 		type: [Number, String],
 		default: '10px'
+	},
+	hasImage: {	//列表是否包含图片
+		type: [Boolean, String],
+		default: false
 	}
 }
 
@@ -83,6 +89,10 @@ props: {
 | setData| 设置列表数组数据| |
 | resetLists| 清空列表数组数据| |
 
+## <span id="hasImage">hasImage属性注意</span>
+* ### 当列表中有图片时， 可以传hasImage为true，可以保证计算精准
+* ### hasImage为true后自己写的vue文件(列表样式vue)中必须this.$emit('imageLoaded')来告知父级图片加载准备完成(如果一项数据中有多张图片可以计算image组件的load或error次数，当次数等于图片数量时再emit), 万一该项没有图片， 也需要在mounted生命周期中emit
+* 
 
 ## <span id="demo">示例代码</span>
 ```html

@@ -1,6 +1,6 @@
 <template>
 	<view class="container">
-		<QSMasonry ref="QSMasonry" :col="col"></QSMasonry>
+		<QSMasonry ref="QSMasonry" hasImage :col="col"></QSMasonry>
 		<button type="warn" style="position: fixed;bottom: 20px; right: 20px;" @tap="add">添加</button>
 		<button type="warn" style="position: fixed;bottom: 20px; left: 20px;" @tap="changeCol">增加列数</button>
 	</view>

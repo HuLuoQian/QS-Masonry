@@ -3,12 +3,8 @@
 		<!-- <view class="image-box">
 			<image src="/static/logo.png" mode="aspectFill" class="image"></image>
 		</view> -->
-		<image :src="listItem.img" mode="widthFix" class="img"></image>
-		<text v-if="listItem.index == 1">xxx</text>
-		<text>xxx</text>
-		<text v-if="listItem.index == 3">xxx</text>
-		<text>xxx</text>
-		<text>{{listItem.index}}</text>
+		<image :src="listItem.img" mode="widthFix" class="img" @load="imgLoaded" @error="imgLoaded"></image>
+		<text class="text">{{listItem.index}}</text>
 	</view>
 </template>
 
@@ -31,6 +27,9 @@
 					icon: 'none',
 					position: 'center'
 				})
+			},
+			imgLoaded() {
+				this.$emit('imgLoaded')
 			}
 		}
 	}
@@ -65,5 +64,10 @@
 	.img{
 		width: 100%;
 		height: auto;
+	}
+	.text{
+		font-size: 28rpx;
+		color: #999999;
+		margin-top: 25rpx;
 	}
 </style>
