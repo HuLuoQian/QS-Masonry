@@ -62,7 +62,7 @@ props: {
 		type: String,
 		default: '20rpx'
 	},
-	colSpace: {	//列之间的间距
+	colSpace: {	//列之间的间距, 单位px
 		type: [Number, String],
 		default: uni.upx2px(15)
 	},
@@ -86,11 +86,12 @@ props: {
 ## <span id="Methods">Methods</span>
 | 方法名| 说明|  传入参数|
 | --------- | -------- | -----: |
-| setData| 设置列表数组数据| |
-| resetLists| 清空列表数组数据| |
+| add(建议使用)| 设置列表新增的数组数据| 需要增加的列表数据|
+| reset| 清空列表数组数据| |
+| setData| 设置列表数组数据| 整个列表数据|
 
 ## <span id="hasImage">hasImage属性注意</span>
-* ### 当列表中有图片时， 可以传hasImage为true，可以保证计算精准
+* ### 当列表中有图片并且图片的高度不是固定时， 可以传hasImage为true，可以保证计算精准
 * ### hasImage为true后自己写的vue文件(列表样式vue)中必须this.$emit('imageLoaded')来告知父级图片加载准备完成(如果一项数据中有多张图片可以计算image组件的load或error次数，当次数等于图片数量时再emit), 万一该项没有图片， 也需要在mounted生命周期中emit
 * 
 
@@ -161,14 +162,14 @@ export default {
 		let _this = this;
 		const list = Array(10).fill('').map((item, index)=>{ return { index: _this.list.length + index, img: _this.images[Math.floor(Math.random() * _this.images.length)].path } });
 		_this.list = list;
-		_this.$refs.QSMasonry.setData(list)
+		_this.$refs.QSMasonry.add(list)
 	},
 	methods: {
 		add() {
 			let _this = this;
 			const list = Array(10).fill('').map((item, index)=>{ return { index: _this.list.length + index, img: _this.images[Math.floor(Math.random() * _this.images.length)].path } });
 			_this.list = _this.list.concat(list);
-			_this.$refs.QSMasonry.setData(_this.list)
+			_this.$refs.QSMasonry.add(list)
 		},
 		changeCol() {
 			if(this.col < 6)

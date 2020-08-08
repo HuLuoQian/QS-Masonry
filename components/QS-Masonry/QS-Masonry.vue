@@ -69,19 +69,26 @@
 			return {
 				lists: getDefLists(Number(this.col)),
 				data: [],
+				nData: [],
 				list_hide: [],
 				maxWidth: 0,
-				currentCount: 0
+				currentCount: 0,
+				working: false,
+				workQueue: []
 			}
 		},
 		watch: {
 			list(newValue) {
+				console.log('执行setData 1')
 				this.setData(newValue);
 			},
 			col(newValue) {
-				this.resetLists();
+				console.log('col参数改变:' + newValue);
+				console.log('data:' + JSON.stringify(this.data));
+				// this.resetLists();
 				this.lists = getDefLists(Number(newValue));
 				this.$nextTick(() => {
+					console.log('执行setData 2')
 					this.setData(this.data)
 				})
 			}
@@ -104,7 +111,11 @@
 			}
 		},
 		mounted() {
-			this.setData(this.list);
+				console.log(this.list.length)
+			if(this.list.length > 0) {
+				console.log('list 长度 大于零 执行setData')
+				this.setData(this.list);
+			}
 		},
 		methods: {
 			getMaxWidth() {
@@ -125,7 +136,7 @@
 					})
 				})
 			},
-			getListInfo(list, currentCount) {
+			getListInfo(list, currentCount, type) {
 				let _this = this;
 				return new Promise((rs, rj) => {
 					const ref = _this.$refs.QSMasonryHideTemplate;
@@ -133,7 +144,7 @@
 						ref.setHideList([...list], () => {
 							ref.getQuery().then(data => {
 								ref.clearHideList();
-								if((_this.currentCount - 1) === currentCount) {
+								if((_this.currentCount - 1) === currentCount || type==='add') {
 									rs(data);
 								}else{
 									rj();
@@ -146,32 +157,72 @@
 					}
 				})
 			},
-			async setData(list) {						
+			add(newList) {
+				if(this.working) {
+					this.workQueue.push(newList);
+				}else{
+					this.addFn(newList);
+				}
+			},
+			async addFn(newList) {
+				if(!this.working) this.working = true;
+				// console.log('增加列表数据:' + JSON.stringify(newList));
 				if(this.currentCount > 999999) this.currentCount = 0;
 				const currentCount = this.currentCount++;
-				list = JSON.parse(JSON.stringify(list))
+				// console.log('当前次数:' + currentCount);
 				try {
-					if (!isArray(list)) {
+					if (!isArray(newList)) {
 						console.log('QSMasonry异常: 不是数组')
 						return;
 					}
+					const list = JSON.parse(JSON.stringify(newList))
+					this.nData = this.nData.concat(list);
+					console.log(this.nData)
+					if (!this.maxWidth) await this.getMaxWidth();
+					await this.updateLists(list, currentCount, 'add');
+				} catch (e) {
+					//TODO handle the exception
+				}
+				if(this.working) this.working = false;
+				if(this.workQueue.length > 0) {
+					this.addFn(this.workQueue[0]);
+					this.workQueue.splice(0, 1);
+				}
+			},
+			async setData(newList) {	
+				// console.log('设置列表数据:' + JSON.stringify(newList));
+				if(this.currentCount > 999999) this.currentCount = 0;
+				const currentCount = this.currentCount++;
+				// console.log('当前次数:' + currentCount);
+				try {
+					if (!isArray(newList)) {
+						console.log('QSMasonry异常: 不是数组')
+						return;
+					}
+					const list = JSON.parse(JSON.stringify(newList))
+					this.nData = list;
 					if (!this.maxWidth) await this.getMaxWidth();
 					if (list.length > 0) {
+						// console.log('list length 大于 0')
 						if (list.length > this.data.length) {
-							this.updateLists(list.slice(this.data.length, list.length), currentCount);
+							// console.log('list length 大于 old list length， 执行 增加 列表操作')
+							this.updateLists(list.slice(this.data.length, list.length), currentCount, 'setData');
 						} else {
+							console.log('list length 不大于 old list length， 先执行 清空列表操作再执行增加列表操作')
 							this.resetLists();
-							this.updateLists(list, currentCount);
+							this.nData = list;
+							this.updateLists(list, currentCount, 'setData');
 						}
 					} else {
+						console.log('list length 等于 0， 执行清空列表操作')
 						this.resetLists();
 					}
-					this.nData = list;
+					// console.log('nData 赋值:' + JSON.stringify(this.nData))
 				} catch (e) {
 					//TODO handle the exception
 				}
 			},
-			updateListsHeight(currentCount) {
+			updateListsHeight(currentCount, type) {
 				return new Promise(async (rs, rj) => {
 					const promises = [];
 					const refs = this.$refs.QSMasonryTemplate;
@@ -184,30 +235,41 @@
 						if (item && item.height !== undefined)
 							this.lists[i].height = item.height;
 					}
-					if((this.currentCount - 1) === currentCount) {
+					if((this.currentCount - 1) === currentCount || type==='add') {
 						rs()
 					}else{
 						rj()
 					}
 				})
 			},
-			async updateLists(list, currentCount) {
-				try{
-					if((this.currentCount - 1) === currentCount)
-					await this.updateListsHeight(currentCount);
-					const listInfo = await this.getListInfo(list, currentCount);
-					if((this.currentCount - 1) === currentCount) {
-						for (let i = 0; i < list.length; i++) {
-							this.addListData(list[i], listInfo[i])
+			updateLists(list, currentCount, type) {
+				return new Promise(async (rs, rj)=>{
+					try{
+						if((this.currentCount - 1) === currentCount)
+						// console.log('等待更新列表布局信息')
+						await this.updateListsHeight(currentCount, type);
+						// console.log('等待获取列表布局信息')
+						const listInfo = await this.getListInfo(list, currentCount, type);
+						// console.log('获取列表布局信息: ' + JSON.stringify(listInfo))
+						if((this.currentCount - 1) === currentCount || type==='add') {
+							for (let i = 0; i < list.length; i++) {
+								this.addListData(list[i], listInfo[i])
+							}
+							this.$nextTick(() => {
+								this.data = [...this.nData];
+								console.log('nData：' + JSON.stringify(this.nData));
+								console.log('设置data：' + JSON.stringify(this.data));
+								this.$emit('updated')
+								rs();
+							})
+						}else{
+							rs();
 						}
-						this.$nextTick(() => {
-							this.data = [...this.nData];
-							this.$emit('updated')
-						})
+					}catch(e){
+						//TODO handle the exception
+						rj()
 					}
-				}catch(e){
-					//TODO handle the exception
-				}
+				})
 			},
 			addListData(data, info) {
 				const lists = this.lists;
@@ -219,6 +281,7 @@
 				obj.height += info === null ? 10 : info.height;
 			},
 			resetLists() {
+				// console.log('清空瀑布流列表')
 				const lists = this.lists;
 				for (let i = 0; i < lists.length; i++) {
 					while (lists[i].list.length > 0) {
@@ -226,6 +289,13 @@
 					}
 					lists[i].height = 0
 				}
+				console.log('清空nData')
+				this.nData = [];
+				this.data = [];
+			},
+			reset() {
+				console.log('外部调用 reset')
+				this.resetLists();
 			}
 		}
 	}

@@ -62,14 +62,14 @@
 			let _this = this;
 			const list = Array(10).fill('').map((item, index)=>{ return { index: _this.list.length + index, img: _this.images[Math.floor(Math.random() * _this.images.length)].path } });
 			_this.list = list;
-			_this.$refs.QSMasonry.setData(list)
+			_this.$refs.QSMasonry.add(list)
 		},
 		methods: {
 			add() {
 				let _this = this;
 				const list = Array(10).fill('').map((item, index)=>{ return { index: _this.list.length + index, img: _this.images[Math.floor(Math.random() * _this.images.length)].path } });
 				_this.list = _this.list.concat(list);
-				_this.$refs.QSMasonry.setData(_this.list)
+				_this.$refs.QSMasonry.add(list)
 			},
 			changeCol() {
 				if(this.col < 6)
